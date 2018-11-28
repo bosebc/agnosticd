@@ -12,7 +12,7 @@
       name: openshift_commons_facts
     vars:
       set_hostname_suffix: false
-      
+
   - name: delete ci/cd projects
     shell: "{{ openshift_cli }} delete project {{ project_cicd }} {{ project_prod }} {{ project_stage }} {{ project_test }} {{ project_dev }}"
     ignore_errors: true
