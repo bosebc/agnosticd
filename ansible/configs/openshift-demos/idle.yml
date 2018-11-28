@@ -3,6 +3,8 @@
   hosts: all
   gather_facts: false
   run_once: true
+  vars_files:
+    - env_vars.yml
   tasks:
     - import_tasks: create_oc_config.yml
 
