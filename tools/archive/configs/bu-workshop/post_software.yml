@@ -70,7 +70,7 @@
 - name: NFS volume configuration
   hosts:
     - "{{ ('tag_' ~ env_type ~ '_' ~ guid ~ '_master') | replace('-', '_') }}"
-  vars_files:  
+  vars_files:
     - "ssh_vars.yml"
   tags:
     - workshop
