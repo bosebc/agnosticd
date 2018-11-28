@@ -62,7 +62,7 @@
 
 
 # include global vars again, this time for all hosts now that the inventory is built
-- import_playbook: include_vars.yml
+- import_playbook: ../include_vars.yml
 
 - name: Step 001.3 Configure Linux Hosts and Wait for Connection
   hosts:
