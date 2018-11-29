@@ -12,7 +12,11 @@ You can run the playbook with the following arguments to overwrite the default v
 [source,bash]
 ----
 REGION=ap-southeast-2
+<<<<<<< HEAD
 KEYNAME=testkey
+=======
+KEYNAME=ocpkey
+>>>>>>> remotes/origin/agnosticD-v2
 GUID=praktest4
 ENVTYPE=ans-tower-lab
 CLOUDPROVIDER=ec2
@@ -45,6 +49,8 @@ ENVTYPE=ans-tower-lab
 CLOUDPROVIDER=ec2
 HOSTZONEID='Z3IHLWJZOU9SRT'
 BASESUFFIX='.example.opentlc.com'
+<<<<<<< HEAD
+=======
 
 ansible-playbook \
      ansible/main.yml  \
@@ -52,6 +58,22 @@ ansible-playbook \
       -e "env_type=${ENVTYPE}" \
       -e "key_name=${KEYNAME}" \
       -e "subdomain_base_suffix=${BASESUFFIX}" \
+        -e "cloud_provider=${CLOUDPROVIDER}" \
+        -e "aws_region=${REGION}" \
+        -e "HostedZoneId=${HOSTZONEID}" \
+        -e "email=name@example.com" \
+        -e "output_dir=/opt/workdir" \
+         -e@../secret.yml -vv \
+         -e "software_to_deploy=none" -e "deploy_tower_demo=false" -e "install_win_ssh=false"  -e "install_win_ad=false" -e "deploy_tower_homework=true" 
+>>>>>>> remotes/origin/agnosticD-v2
+
+ansible-playbook \
+     ansible/main.yml  \
+      -e "guid=${GUID}" \
+      -e "env_type=${ENVTYPE}" \
+      -e "key_name=${KEYNAME}" \
+      -e "subdomain_base_suffix=${BASESUFFIX}" \
+<<<<<<< HEAD
       -e "cloud_provider=${CLOUDPROVIDER}" \
       -e "aws_region=${REGION}" \
       -e "HostedZoneId=${HOSTZONEID}" \
@@ -60,6 +82,15 @@ ansible-playbook \
       -e@../secret.yml \
       -e "secret_dir=~/secrets" \
       -e "deploy_tower_homework=true" -vv
+=======
+        -e "cloud_provider=${CLOUDPROVIDER}" \
+        -e "aws_region=${REGION}" \
+        -e "HostedZoneId=${HOSTZONEID}" \
+        -e "email=name@example.com" \
+      -e "install_ipa_client=false" \
+      -e "repo_method=file" -e "own_repo_path=${REPO_PATH}" -e "repo_version=${REPO_VERSION}" \
+-      -e "software_to_deploy=none" -e "deploy_tower_demo=false" -e "install_win_ssh=false"  -e "install_win_ad=false" -e "deploy_tower_homework=true" 
+>>>>>>> remotes/origin/agnosticD-v2
 ----
 
 
