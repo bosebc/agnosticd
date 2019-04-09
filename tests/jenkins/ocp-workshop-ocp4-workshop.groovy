@@ -133,9 +133,9 @@ pipeline {
         */
 
         stage('Wait for last email') {
-//            environment {
-//                credentials=credentials("${imap_creds}")
-//            }
+            environment {
+                credentials=credentials("${imap_creds}")
+            }
             steps { 
                 git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
                     branch: 'development'
