@@ -116,8 +116,8 @@ pipeline {
                 }
             }
         }
-        /* Skip this step because sometimes the completed email arrives
-         before the 'has started' email
+        // Skip this step because sometimes the completed email arrives
+        // before the 'has started' email
         stage('Wait for first email') {
             environment {
                 credentials=credentials("${imap_creds}")
@@ -130,7 +130,7 @@ pipeline {
                     --filter 'has started'"""
             }
         }
-        */
+        //
 
         stage('Wait for last email') {
             environment {
