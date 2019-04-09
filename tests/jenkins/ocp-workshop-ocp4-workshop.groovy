@@ -136,42 +136,42 @@ pipeline {
             environment {
                 credentials=credentials("${imap_creds}")
             }
-//            steps { 
-//                git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
-//                    branch: 'development'
-                
-//                withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
-//                    sh """./tests/jenkins/downstream/poll_email.py \
-//                        --guid ${guid} \
-//                        --timeout 30 \
-//                        --server '${imap_server}' \
-//                        --filter 'has completed'"""
-//                }
-//            }
-//        }
-
-            steps {
+            steps { 
                 git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
                     branch: 'development'
-
-                script {
-                    email = sh(
-                        returnStdout: true,
-                        script: """./tests/jenkins/downstream/poll_email.py \
-                          --server '${imap_server}' \
-                          --guid ${guid} \
-                          --timeout 60 \
-                          --filter 'has completed'"""
-                    ).trim()
-
-//                    def m = email =~ /To get started, please login with your OPENTLC credentials to: ([^ ]+) in your web browser/
-//                    openshift_location = m[0][1]
-                      def m = email =~ /Openshift Master Console: (https:\/\/master\.[^ ]+)/
-                      openshift_location = m[0][1]
-                      echo "openshift_location = '${openshift_location}'"
+                
+                withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
+                    sh """./tests/jenkins/downstream/poll_email.py \
+                        --guid ${guid} \
+                        --timeout 40 \
+                        --server '${imap_server}' \
+                        --filter 'has completed'"""
                 }
             }
         }
+
+//            steps {
+//                git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
+//                    branch: 'development'
+
+//                script {
+//                    email = sh(
+//                        returnStdout: true,
+//                        script: """./tests/jenkins/downstream/poll_email.py \
+//                          --server '${imap_server}' \
+//                          --guid ${guid} \
+//                          --timeout 60 \
+//                          --filter 'has completed'"""
+//                    ).trim()
+
+//                    def m = email =~ /To get started, please login with your OPENTLC credentials to: ([^ ]+) in your web browser/
+//                    openshift_location = m[0][1]
+//                      def m = email =~ /Openshift Master Console: (https:\/\/master\.[^ ]+)/
+//                      openshift_location = m[0][1]
+//                      echo "openshift_location = '${openshift_location}'"
+//                }
+//            }
+//        }
 
         stage('Test OpenShift access') {
             environment {
