@@ -19,8 +19,8 @@ def ssh_admin_host = 'admin-host-na'
 
 // state variables
 def guid=''
-def ssh_location = ''
 def openshift_location = ''
+def webapp_location = ''
 
 
 // Catalog items
@@ -40,6 +40,9 @@ def region_choice = [
     'emea',
     'latam',
     'apac',
+    'na_openshiftbu',
+    'apac_openshift_bu',
+    'emea_openshiftbu',
 ].join("\n")
 
 pipeline {
@@ -89,6 +92,19 @@ pipeline {
                     def item = params.catalog_item.split(' / ')[1].trim()
                     def ocprelease = params.ocprelease.trim()
                     def region = params.region.trim()
+                    def cfparams = [
+                        'check=t',
+                        'quotacheck=t',
+                        "ocprelease=${ocprelease}",
+                        "region=${region}",
+                        'expiration=7',
+                        'runtime=8',
+                        'users=2',
+                        'city=jenkinsccicd',
+                        'salesforce=test',
+                        'notes=devops_automation_jenkins',
+                    ].join(',').trim()
+
                     echo "'${catalog}' '${item}'"
                     guid = sh(
                         returnStdout: true,
@@ -97,7 +113,7 @@ pipeline {
                           -c '${catalog}' \
                           -i '${item}' \
                           -G '${cf_group}' \
-                          -d 'check=t,quotacheck=t,ocprelease=${ocprelease},region=${region},expiration=7,runtime=8,nodes=2'
+                          -d '${cfparams}' \
                         """
                     ).trim()
 
@@ -105,13 +121,15 @@ pipeline {
                 }
             }
         }
-        /* Skip this step because sometimes the completed email arrives
-         before the 'has started' email
+
         stage('Wait for first email') {
             environment {
                 credentials=credentials("${imap_creds}")
             }
             steps {
+                git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
+                    branch: 'development'
+
 
                 sh """./tests/jenkins/downstream/poll_email.py \
                     --server '${imap_server}' \
@@ -120,8 +138,8 @@ pipeline {
                     --filter 'has started'"""
             }
         }
-        */
-        stage('Wait for last email and parse SSH location') {
+
+        stage('Wait for last email and parse OpenShift and App location') {
             environment {
                 credentials=credentials("${imap_creds}")
             }
@@ -136,14 +154,28 @@ pipeline {
                           ./tests/jenkins/downstream/poll_email.py \
                           --server '${imap_server}' \
                           --guid ${guid} \
-                          --timeout 90 \
+                          --timeout 100 \
                           --filter 'has completed'
                         """
                     ).trim()
 
-                    def m = email =~ /<pre>. *ssh -i [^ ]+ *([^ <]+?) *<\/pre>/
-                    ssh_location = m[0][1]
-                    echo "ssh_location = '${ssh_location}'"
+                    try {
+                        def m = email =~ /Openshift Master Console: (https:\/\/master\.[^ ]+)/
+                        openshift_location = m[0][1]
+                        echo "openshift_location = '${openshift_location}'"
+
+                        m = email =~ /Web App URL: (https:\/\/[^ \n]+)/
+                        webapp_location = m[0][1]
+                        echo "webapp_location = '${openshift_location}'"
+
+                        m = email =~ /Cluster Admin User: ([^ \n]+ \/ [^ \n]+)/
+                        echo "Custer Admin User: ${m[0][1]}"
+                    } catch(Exception ex) {
+                        echo "Could not parse email:"
+                        echo email
+                        echo ex.toString()
+                        throw ex
+                    }
                 }
             }
         }
@@ -154,21 +186,6 @@ pipeline {
             }
             steps {
                 sh "./tests/jenkins/downstream/openshift_client.sh '${openshift_location}'"
-            }
-        }
-
-        stage('SSH') {
-            steps {
-                withCredentials([
-                    sshUserPrivateKey(
-                        credentialsId: ssh_creds,
-                        keyFileVariable: 'ssh_key',
-                        usernameVariable: 'ssh_username')
-                ]) {
-                    sh "ssh -o StrictHostKeyChecking=no -i ${ssh_key} ${ssh_location} w"
-                    sh "ssh -o StrictHostKeyChecking=no -i ${ssh_key} ${ssh_location} oc version"
-                    sh "ssh -o StrictHostKeyChecking=no -i ${ssh_key} ${ssh_location} sudo ansible -m ping all"
-                }
             }
         }
 
@@ -262,7 +279,7 @@ pipeline {
             ]) {
                 sh("""
                     ssh -o StrictHostKeyChecking=no -i ${ssh_key} ${ssh_admin} \
-                    "find deployer_logs -name '*${guid}*log' | xargs cat"
+                    "bin/logs.sh ${guid}" || true
                 """.trim()
                 )
             }
