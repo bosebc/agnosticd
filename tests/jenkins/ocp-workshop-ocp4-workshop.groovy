@@ -176,14 +176,14 @@ pipeline {
 //            }
 //        }
 
-        stage('Test OpenShift access') {
-            environment {
-                credentials = credentials("${opentlc_creds}")
-            }
-            steps {
-                sh "./tests/jenkins/downstream/openshift_client.sh '${openshift_location}'"
-            }
-        }
+//        stage('Test OpenShift access') {
+//            environment {
+//                credentials = credentials("${opentlc_creds}")
+//            }
+//            steps {
+//                sh "./tests/jenkins/downstream/openshift_client.sh '${openshift_location}'"
+//            }
+//        }
 
 //        stage('SSH') {
 //            steps {
