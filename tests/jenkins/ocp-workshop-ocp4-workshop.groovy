@@ -149,9 +149,6 @@ pipeline {
                         --timeout 60 \
                         --server '${imap_server}' \
                         --filter 'has completed'"""
-
-                    def m = email =~ /Openshift Master Console: (https:\/\/master\.[^ ]+)/
-                    openshift_location = m[0][1]
                 }
             }
         }
