@@ -135,23 +135,23 @@ pipeline {
         }
         //
 
-        stage('Wait for last email') {
-            environment {
-                credentials=credentials("${imap_creds}")
-            }
-            steps { 
-                git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
-                    branch: 'development'
+//        stage('Wait for last email') {
+//            environment {
+//                credentials=credentials("${imap_creds}")
+//            }
+//            steps { 
+//                git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
+//                    branch: 'development'
                 
-                withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
-                    sh """./tests/jenkins/downstream/poll_email.py \
-                        --guid ${guid} \
-                        --timeout 60 \
-                        --server '${imap_server}' \
-                        --filter 'has completed'"""
-                }
-            }
-        }
+//                withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
+//                    sh """./tests/jenkins/downstream/poll_email.py \
+//                        --guid ${guid} \
+//                        --timeout 60 \
+//                        --server '${imap_server}' \
+//                        --filter 'has completed'"""
+//                }
+//            }
+//        }
 
 //            steps {
 //                git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
@@ -175,6 +175,33 @@ pipeline {
 //                }
 //            }
 //        }
+
+        stage('Wait for last email and parse OpenShift location') {
+            environment {
+                credentials=credentials("${imap_creds}")
+            }
+            steps {
+                git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
+                    branch: 'development'
+
+                script {
+                    email = sh(
+                        returnStdout: true,
+                        script: """
+                          ./tests/jenkins/downstream/poll_email.py \
+                          --server '${imap_server}' \
+                          --guid ${guid} \
+                          --timeout 30 \
+                          --filter 'has completed'
+                        """
+                    ).trim()
+
+
+                    def m = email =~ /Openshift Master Console: (https:\/\/master\.[^ ]+)/
+                    openshift_location = m[0][1]
+                }
+            }
+        }
 
         stage('Test OpenShift access') {
             environment {
