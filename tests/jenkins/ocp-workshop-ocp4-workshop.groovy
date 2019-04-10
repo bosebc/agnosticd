@@ -146,7 +146,7 @@ pipeline {
                 withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
                     sh """./tests/jenkins/downstream/poll_email.py \
                         --guid ${guid} \
-                        --timeout 40 \
+                        --timeout 60 \
                         --server '${imap_server}' \
                         --filter 'has completed'"""
                 }
