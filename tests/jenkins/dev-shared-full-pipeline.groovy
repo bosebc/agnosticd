@@ -85,10 +85,12 @@ pipeline {
 
                 script {
                     def catalog = params.catalog_item.split(' / ')[0].trim()
-                    def item = params.catalog_item.split(' / ')[1].trim()
-                    def ocprelease = params.ocprelease.trim()
-                    def region = params.region.trim()
-                    def cfparams = [
+		    def item = ['DEV - Coderland Reactica Demo', 'DEV - CICD for Monolith']
+		    for (x in item) {
+                      //def item = params.catalog_item.split(' / ')[1].trim()
+                      def ocprelease = params.ocprelease.trim()
+                      def region = params.region.trim()
+                      def cfparams = [
                         'check=t',
                         'quotacheck=t',
                         "ocprelease=${ocprelease}",
@@ -100,9 +102,9 @@ pipeline {
                         'city=jenkinsccicd',
                         'salesforce=test',
                         'notes=devops_automation_jenkins',
-                    ].join(',').trim()
-                    echo "'${catalog}' '${item}'"
-                    guid = sh(
+                      ].join(',').trim()
+                      echo "'${catalog}' '${item}'"
+                      guid = sh(
                         returnStdout: true,
                         script: """
                           ./opentlc/order_svc_guid.sh \
@@ -111,9 +113,10 @@ pipeline {
                           -G '${cf_group}' \
                           -d '${cfparams}' \
                         """
-                    ).trim()
+                      ).trim()
 
-                    echo "GUID is '${guid}'"
+                      echo "GUID is '${guid}'"
+		    }
                 }
             }
         }
@@ -132,7 +135,7 @@ pipeline {
                     --filter 'has started'"""
             }
         }
-        */
+        // This line was the closing for Skip this step line
 
         stage('Wait for last email and parse OpenShift location') {
             environment {
@@ -202,8 +205,8 @@ pipeline {
                 admin_credentials = credentials("${opentlc_admin_creds}")
                 DEBUG = 'true'
             }
-            /* This step uses the delete_svc_guid.sh script to retire
-             the service from CloudForms */
+            // This step uses the delete_svc_guid.sh script to retire
+            // the service from CloudForms
             steps {
                 git 'https://github.com/fridim/cloudforms-oob'
 
@@ -245,13 +248,13 @@ pipeline {
                         --filter 'has been deleted'"""
                 }
             }
-        }
+        } */
     }
 
     post {
         failure {
             git 'https://github.com/fridim/cloudforms-oob'
-            /* retire in case of failure */
+            // retire in case of failure //
             withCredentials(
                 [
                     usernameColonPassword(credentialsId: opentlc_creds, variable: 'credentials'),
@@ -265,7 +268,7 @@ pipeline {
                 """
             }
 
-            /* Print ansible logs */
+            // Print ansible logs //
 //            withCredentials([
 //                string(credentialsId: ssh_admin_host, variable: 'ssh_admin'),
 //                sshUserPrivateKey(
