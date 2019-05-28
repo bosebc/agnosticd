@@ -70,6 +70,7 @@ pipeline {
     }
 
     stages {
+	parallel {
         stage('order from CF') {
             environment {
                 uri = "${cf_uri}"
@@ -115,6 +116,53 @@ pipeline {
                 }
             }
         }
+	        stage('order from CF') {
+            environment {
+                uri = "${cf_uri}"
+                credentials = credentials("${opentlc_creds}")
+                DEBUG = 'true'
+            }
+            /* This step use the order_svc_guid.sh script to order
+             a service from CloudForms */
+            steps {
+                git url: 'https://github.com/fridim/cloudforms-oob'
+
+                script {
+                    def catalog = params.catalog_item.split(' / ')[1].trim()
+                    def item = params.catalog_item.split(' / ')[1].trim()
+                    def ocprelease = params.ocprelease.trim()
+                    def region = params.region.trim()
+                    def cfparams = [
+                        'check=t',
+                        'quotacheck=t',
+                        "ocprelease=${ocprelease}",
+                        "region=${region}",
+                        'expiration=7',
+                        'runtime=8',
+                        'users=2',
+                        'city=jenkinsccicd',
+                        'salesforce=test',
+                        'notes=devops_automation_jenkins',
+                    ].join(',').trim()
+
+                    echo "'${catalog}' '${item}'"
+                    guid = sh(
+                        returnStdout: true,
+                        script: """
+                          ./opentlc/order_svc_guid.sh \
+                          -c '${catalog}' \
+                          -i '${item}' \
+                          -G '${cf_group}' \
+                          -d '${cfparams}' \
+                        """
+                    ).trim()
+
+                    echo "GUID is '${guid}'"
+                }
+            }
+        }
+
+	}
 
         stage('Wait for first email') {
             environment {
