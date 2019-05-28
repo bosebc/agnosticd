@@ -25,7 +25,7 @@ def webapp_location = ''
 
 // Catalog items
 def choices = [
-    'DevOps Shared Cluster Development / *',
+    'DevOps Shared Cluster Development / DEV - CICD for Monolith, DEV - Coderland Reactica Demo',
 ].join("\n")
 
 def ocprelease_choice = [
