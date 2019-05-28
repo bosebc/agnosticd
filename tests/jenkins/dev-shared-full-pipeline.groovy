@@ -129,7 +129,7 @@ pipeline {
                 git url: 'https://github.com/fridim/cloudforms-oob'
 
                 script {
-                    def catalog = params.catalog_item.split(' / ')[1].trim()
+                    def catalog = params.catalog_item.split(' / ')[0].trim()
                     def item = params.catalog_item.split(' / ')[1].trim()
                     def ocprelease = params.ocprelease.trim()
                     def region = params.region.trim()
