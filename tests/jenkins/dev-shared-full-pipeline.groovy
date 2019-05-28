@@ -24,7 +24,6 @@ def openshift_location = ''
 // Catalog items
 def choices = [
     'DevOps Shared Cluster Development / DEV - Coderland Reactica Demo',
-    'DevOps Shared Cluster Development / DEV - CICD for Monolith',
 //    "DevOps Shared Cluster Development / DEV - CICD for Monolith\nDevOps Shared Cluster Development / DEV - Coderland Reactica Demo",
 ].join("\n")
 
@@ -85,7 +84,7 @@ pipeline {
 
                 script {
                     def catalog = params.catalog_item.split(' / ')[0].trim()
-		    def item = ['DEV - Coderland Reactica Demo', 'DEV - CICD for Monolith']
+		    def item = ['DEV - Coderland Reactica Demo', 'Dev - DM7 QLB Demo', 'DEV - CICD for Monolith']
 		    for (x in item) {
                       //def item = params.catalog_item.split(' / ')[1].trim()
                       def ocprelease = params.ocprelease.trim()
