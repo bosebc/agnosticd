@@ -109,7 +109,7 @@ pipeline {
                         script: """
                           ./opentlc/order_svc_guid.sh \
                           -c '${catalog}' \
-                          -i '${item}' \
+                          -i '${x}' \
                           -G '${cf_group}' \
                           -d '${cfparams}' \
                         """
