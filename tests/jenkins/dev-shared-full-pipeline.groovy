@@ -23,7 +23,9 @@ def openshift_location = ''
 
 // Catalog items
 def choices = [
-    "DevOps Shared Cluster Development / DEV - CICD for Monolith\nDevOps Shared Cluster Development / DEV - Coderland Reactica Demo",
+    'DevOps Shared Cluster Development / DEV - Coderland Reactica Demo',
+    'DevOps Shared Cluster Development / DEV - CICD for Monolith',
+//    "DevOps Shared Cluster Development / DEV - CICD for Monolith\nDevOps Shared Cluster Development / DEV - Coderland Reactica Demo",
 ].join("\n")
 
 def ocprelease_choice = [
