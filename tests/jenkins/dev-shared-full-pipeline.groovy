@@ -20,12 +20,12 @@ def ssh_admin_host = 'admin-host-na'
 // state variables
 def guid=''
 def openshift_location = ''
-def webapp_location = ''
+//def webapp_location = ''
 
 
 // Catalog items
 def choices = [
-    'DevOps Shared Cluster Development / DEV - CICD for Monolith, DEV - Coderland Reactica Demo',
+    "DevOps Shared Cluster Development / DEV - CICD for Monolith\nDevOps Shared Cluster Development / DEV - Coderland Reactica Demo",
 ].join("\n")
 
 def ocprelease_choice = [
@@ -158,12 +158,12 @@ pipeline {
                         openshift_location = m[0][1]
                         echo "openshift_location = '${openshift_location}'"
 
-                        m = email =~ /Web App URL: (https:\/\/[^ \n]+)/
-                        webapp_location = m[0][1]
-                        echo "webapp_location = '${openshift_location}'"
+                        //m = email =~ /Web App URL: (https:\/\/[^ \n]+)/
+                        //webapp_location = m[0][1]
+                        //echo "webapp_location = '${openshift_location}'"
 
-                        m = email =~ /Cluster Admin User: ([^ \n]+ \/ [^ \n]+)/
-                        echo "Custer Admin User: ${m[0][1]}"
+                        //m = email =~ /Cluster Admin User: ([^ \n]+ \/ [^ \n]+)/
+                        //echo "Custer Admin User: ${m[0][1]}"
                     } catch(Exception ex) {
                         echo "Could not parse email:"
                         echo email
