@@ -84,7 +84,7 @@ pipeline {
 
                 script {
                     def catalog = params.catalog_item.split(' / ')[0].trim()
-		    def item = ['DEV - Coderland Reactica Demo', 'Dev - DM7 QLB Demo', 'DEV - CICD for Monolith']
+		    def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
 		    for (x in item) {
                       //def item = params.catalog_item.split(' / ')[1].trim()
                       def ocprelease = params.ocprelease.trim()
@@ -97,10 +97,6 @@ pipeline {
                         'expiration=7',
                         'runtime=8',
                         'nodes=2',
-                        'users=2',
-                        'city=jenkinsccicd',
-                        'salesforce=test',
-                        'notes=devops_automation_jenkins',
                       ].join(',').trim()
                       echo "'${catalog}' '${item}'"
                       guid = sh(
