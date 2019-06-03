@@ -71,9 +71,10 @@ pipeline {
         )
     }
 
-    stages {
-     stage('Run all') {
-      steps {
+   stages {
+    stage('Run all') {
+     steps {
+      script {
        for (x in item) {
         stage('order from CF') {
             environment {
@@ -252,6 +253,7 @@ pipeline {
       }
      }
     }
+   }
 
     post {
         failure {
