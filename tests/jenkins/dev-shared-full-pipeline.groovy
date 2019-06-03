@@ -73,7 +73,7 @@ pipeline {
 
     stages {
      stage('Run all') {
-      script {
+      steps {
        for (x in item) {
         stage('order from CF') {
             environment {
