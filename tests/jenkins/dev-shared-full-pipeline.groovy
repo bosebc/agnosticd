@@ -20,6 +20,7 @@ def ssh_admin_host = 'admin-host-na'
 // state variables
 def guid=''
 def openshift_location = ''
+def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
 
 // Catalog items
 def choices = [
@@ -69,7 +70,7 @@ pipeline {
             name: 'region',
         )
     }
-
+   for (x in item) {
     stages {
         stage('order from CF') {
             environment {
@@ -84,8 +85,8 @@ pipeline {
 
                 script {
                     def catalog = params.catalog_item.split(' / ')[0].trim()
-		    def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
-		    for (x in item) {
+		    //def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
+		    //for (x in item) {
                       //def item = params.catalog_item.split(' / ')[1].trim()
                       def ocprelease = params.ocprelease.trim()
                       def region = params.region.trim()
@@ -111,7 +112,7 @@ pipeline {
                       ).trim()
 
                       echo "GUID is '${guid}'"
-		    }
+		    //}
                 }
             }
         }
@@ -329,4 +330,5 @@ pipeline {
             }
         }
     }
+  }
 }
