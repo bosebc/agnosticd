@@ -73,6 +73,7 @@ pipeline {
    stages {
     stage('Run all') {
      steps {
+      echo "Primary Step"
       script {
        def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
        for (x in item) {
