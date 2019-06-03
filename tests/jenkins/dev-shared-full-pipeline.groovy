@@ -17,6 +17,9 @@ def ssh_creds = '15e1788b-ed3c-4b18-8115-574045f32ce4'
 // Admin host ssh location is in a credential too
 def ssh_admin_host = 'admin-host-na'
 
+//CloudForm Items
+def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
+
 // state variables
 def guid=''
 def openshift_location = ''
@@ -70,13 +73,7 @@ pipeline {
         )
     }
 
-   stages {
-    stage('Run all') {
-     steps {
-      echo "Primary Step"
-      script {
-       def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
-       for (x in item) {
+     stages {
         stage('order from CF') {
             environment {
                 uri = "${cf_uri}"
@@ -91,7 +88,7 @@ pipeline {
                 script {
                     def catalog = params.catalog_item.split(' / ')[0].trim()
 		    //def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
-		    //for (x in item) {
+		    for (x in item) {
                       //def item = params.catalog_item.split(' / ')[1].trim()
                       def ocprelease = params.ocprelease.trim()
                       def region = params.region.trim()
@@ -117,7 +114,21 @@ pipeline {
                       ).trim()
 
                       echo "GUID is '${guid}'"
-		    //}
+                             //Sub Stage
+                             stage('Wait for first email') {
+                                 environment {
+                                     credentials=credentials("${imap_creds}")
+                                 }
+                                 steps {
+                                     sh """./tests/jenkins/downstream/poll_email.py \
+                                         --server '${imap_server}' \
+                                         --guid ${guid} \
+                                         --timeout 20 \
+                                         --filter 'has started'"""
+                                 }
+                             }
+
+		    }
                 }
             }
         }
@@ -251,10 +262,7 @@ pipeline {
             }
         } */
        }
-      }
-     }
     }
-   }
 
     post {
         failure {
