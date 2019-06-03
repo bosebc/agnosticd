@@ -70,8 +70,9 @@ pipeline {
             name: 'region',
         )
     }
-   for (x in item) {
+
     stages {
+      for (x in item) {
         stage('order from CF') {
             environment {
                 uri = "${cf_uri}"
@@ -245,6 +246,7 @@ pipeline {
                 }
             }
         } */
+      }
     }
 
     post {
