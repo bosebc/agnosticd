@@ -71,9 +71,10 @@ pipeline {
         )
     }
 
-    stages {
-     stage('All') {
-      for (x in item) {
+    for (x in item) {
+     stages {
+     //stage('All') {
+      //parallel {
         stage('order from CF') {
             environment {
                 uri = "${cf_uri}"
@@ -247,7 +248,6 @@ pipeline {
                 }
             }
         } */
-      }
      }
     }
 
