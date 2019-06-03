@@ -18,7 +18,8 @@ def ssh_creds = '15e1788b-ed3c-4b18-8115-574045f32ce4'
 def ssh_admin_host = 'admin-host-na'
 
 //CloudForm Items
-def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
+//def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
+def item = ['Dev - DM7 QLB Demo']
 
 // state variables
 def guid=''
