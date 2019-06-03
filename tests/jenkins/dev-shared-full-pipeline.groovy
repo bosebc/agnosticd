@@ -20,7 +20,6 @@ def ssh_admin_host = 'admin-host-na'
 // state variables
 def guid=''
 def openshift_location = ''
-def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
 
 // Catalog items
 def choices = [
@@ -75,6 +74,7 @@ pipeline {
     stage('Run all') {
      steps {
       script {
+       def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
        for (x in item) {
         stage('order from CF') {
             environment {
