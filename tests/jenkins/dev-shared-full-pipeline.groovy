@@ -71,10 +71,9 @@ pipeline {
         )
     }
 
-    for (x in item) {
      stages {
-     //stage('All') {
-      //parallel {
+      script {
+       for (x in item) {
         stage('order from CF') {
             environment {
                 uri = "${cf_uri}"
@@ -248,8 +247,9 @@ pipeline {
                 }
             }
         } */
+       }
+      }
      }
-    }
 
     post {
         failure {
