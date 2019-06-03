@@ -72,6 +72,7 @@ pipeline {
     }
 
     stages {
+     stage('All') {
       for (x in item) {
         stage('order from CF') {
             environment {
@@ -247,6 +248,7 @@ pipeline {
             }
         } */
       }
+     }
     }
 
     post {
