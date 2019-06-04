@@ -18,8 +18,8 @@ def ssh_creds = '15e1788b-ed3c-4b18-8115-574045f32ce4'
 def ssh_admin_host = 'admin-host-na'
 
 //CloudForm Items
-//def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
-def item = ['Dev - DM7 QLB Demo']
+def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
+//def item = ['Dev - DM7 QLB Demo']
 
 // state variables
 def guid=''
@@ -156,7 +156,43 @@ pipeline {
                                  }
                              }
 
-
+                             stage('Retire service from CF') {
+                                 environment {
+                                     uri = "${cf_uri}"
+                                     credentials = credentials("${opentlc_creds}")
+                                     admin_credentials = credentials("${opentlc_admin_creds}")
+                                     DEBUG = 'true'
+                                 }
+                                 // This step uses the delete_svc_guid.sh script to retire
+                                 // the service from CloudForms
+                                 steps {
+                                     git 'https://github.com/fridim/cloudforms-oob'
+    
+                                     sh "./opentlc/delete_svc_guid.sh '${guid}'"
+                                 }
+                                 post {
+                                     failure {
+                                         withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
+                                             mail(
+                                                 subject: "${env.JOB_NAME} (${env.BUILD_NUMBER}) failed retiring for GUID=${guid}",
+                                                 body: "It appears that ${env.BUILD_URL} is failing, somebody should do something about that.\nMake sure GUID ${guid} is destroyed.",
+                                                 to: "${notification_email}",
+                                                 replyTo: "${notification_email}",
+                                                 from: credentials.split(':')[0]
+                                             )
+                                         }
+                                         withCredentials([string(credentialsId: rocketchat_hook, variable: 'HOOK_URL')]) {
+                                             sh(
+                                                 """
+                                                 curl -H 'Content-Type: application/json' \
+                                                 -X POST '${HOOK_URL}' \
+                                                 -d '{\"username\": \"jenkins\", \"icon_url\": \"https://dev-sfo01.opentlc.com/static/81c91982/images/headshot.png\", \"text\": \"@here :rage: ${env.JOB_NAME} (${env.BUILD_NUMBER}) failed retiring ${guid}.\"}'\
+                                                 """.trim()
+                                             )
+                                         }
+                                     }
+                                 }
+                             }
 
 		    }
                 }
@@ -292,7 +328,7 @@ pipeline {
             }
         } */
     }
-
+/*
     post {
         failure {
             git 'https://github.com/fridim/cloudforms-oob'
@@ -375,5 +411,5 @@ pipeline {
                 )
             }
         }
-  }
+  }*/
 }
