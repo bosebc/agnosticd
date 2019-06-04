@@ -115,6 +115,7 @@ pipeline {
 
                         echo "GUID is '${guid}'"
 			
+                        /*
 			//Sub Stages
 			  stage('Wait for last email and parse OpenShift location') {
                                  environment {
@@ -142,6 +143,7 @@ pipeline {
                                      }
                                  }
                           }//Sub Stage1 closing
+			  */
 
                     }//for loop closing
                 }
@@ -163,7 +165,6 @@ pipeline {
         }
         */
 
-	/* Uncomment from here..
         stage('Wait for last email and parse OpenShift location') {
             environment {
                 credentials=credentials("${imap_creds}")
@@ -189,7 +190,7 @@ pipeline {
                     openshift_location = m[0][1]
                 }
             }
-        }*/
+        }
 
         stage('Test OpenShift access') {
             environment {
