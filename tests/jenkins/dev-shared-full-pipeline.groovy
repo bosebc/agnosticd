@@ -17,23 +17,24 @@ def ssh_creds = '15e1788b-ed3c-4b18-8115-574045f32ce4'
 // Admin host ssh location is in a credential too
 def ssh_admin_host = 'admin-host-na'
 
-//CloudForm Items
-def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
-//def item = ['Dev - DM7 QLB Demo']
-
 // state variables
 def guid=''
 def openshift_location = ''
 
 // Catalog items
 def choices = [
-    'DevOps Shared Cluster Development / DEV - Coderland Reactica Demo',
-//    "DevOps Shared Cluster Development / DEV - CICD for Monolith\nDevOps Shared Cluster Development / DEV - Coderland Reactica Demo",
+    'Middleware Solutions Demos / DM7 QLB Demo',
+    'DevOps Shared Cluster Testing / Testing - Shared DM7 QLB Demo',
+    'DevOps Shared Cluster Development / Dev - DM7 QLB Demo',
 ].join("\n")
 
 def ocprelease_choice = [
     '3.11.43',
     '3.11.16',
+    '3.10.34',
+    '3.10.14',
+    '3.9.41',
+    '3.9.40',
 ].join("\n")
 
 def region_choice = [
@@ -74,7 +75,7 @@ pipeline {
         )
     }
 
-     stages {
+    stages {
         stage('order from CF') {
             environment {
                 uri = "${cf_uri}"
@@ -88,12 +89,10 @@ pipeline {
 
                 script {
                     def catalog = params.catalog_item.split(' / ')[0].trim()
-		    //def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
-		    for (x in item) {
-                      //def item = params.catalog_item.split(' / ')[1].trim()
-                      def ocprelease = params.ocprelease.trim()
-                      def region = params.region.trim()
-                      def cfparams = [
+                    def item = params.catalog_item.split(' / ')[1].trim()
+                    def ocprelease = params.ocprelease.trim()
+                    def region = params.region.trim()
+                    def cfparams = [
                         'check=t',
                         'quotacheck=t',
                         "ocprelease=${ocprelease}",
@@ -101,104 +100,27 @@ pipeline {
                         'expiration=7',
                         'runtime=8',
                         'nodes=2',
-                      ].join(',').trim()
-                      echo "'${catalog}' '${item}'"
-                      guid = sh(
+                        'users=2',
+                        'city=jenkinsccicd',
+                        'salesforce=test',
+                        'notes=devops_automation_jenkins',
+                    ].join(',').trim()
+                    echo "'${catalog}' '${item}'"
+                    guid = sh(
                         returnStdout: true,
                         script: """
                           ./opentlc/order_svc_guid.sh \
                           -c '${catalog}' \
-                          -i '${x}' \
+                          -i '${item}' \
                           -G '${cf_group}' \
                           -d '${cfparams}' \
                         """
-                      ).trim()
+                    ).trim()
 
-                      echo "GUID is '${guid}'"
-                             //Sub Stage
-                             //stage('Wait for first email') {
-                             //    environment {
-                             //        credentials=credentials("${imap_creds}")
-                             //    }
-                             //    steps {
-                             //        sh """./tests/jenkins/downstream/poll_email.py \
-                             //            --server '${imap_server}' \
-                             //            --guid ${guid} \
-                             //            --timeout 20 \
-                             //            --filter 'has started'"""
-                             //    }
-                             //}
-
-                             stage('Wait for last email and parse OpenShift location') {
-                                 environment {
-                                     credentials=credentials("${imap_creds}")
-                                 }
-                                 steps {
-                                     git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
-                                         branch: 'development'
-          
-                                     script {
-                                         email = sh(
-                                             returnStdout: true,
-                                             script: """
-                                               ./tests/jenkins/downstream/poll_email.py \
-                                               --server '${imap_server}' \
-                                               --guid ${guid} \
-                                               --timeout 30 \
-                                               --filter 'has completed'
-                                             """
-                                         ).trim()
-          
-          
-                                         def m = email =~ /To get started, please login with your OPENTLC credentials to: ([^ ]+) in your web browser/
-                                         openshift_location = m[0][1]
-                                     }
-                                 }
-                             }
-
-                             stage('Retire service from CF') {
-                                 environment {
-                                     uri = "${cf_uri}"
-                                     credentials = credentials("${opentlc_creds}")
-                                     admin_credentials = credentials("${opentlc_admin_creds}")
-                                     DEBUG = 'true'
-                                 }
-                                 // This step uses the delete_svc_guid.sh script to retire
-                                 // the service from CloudForms
-                                 steps {
-                                     git 'https://github.com/fridim/cloudforms-oob'
-    
-                                     sh "./opentlc/delete_svc_guid.sh '${guid}'"
-                                 }
-                                 post {
-                                     failure {
-                                         withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
-                                             mail(
-                                                 subject: "${env.JOB_NAME} (${env.BUILD_NUMBER}) failed retiring for GUID=${guid}",
-                                                 body: "It appears that ${env.BUILD_URL} is failing, somebody should do something about that.\nMake sure GUID ${guid} is destroyed.",
-                                                 to: "${notification_email}",
-                                                 replyTo: "${notification_email}",
-                                                 from: credentials.split(':')[0]
-                                             )
-                                         }
-                                         withCredentials([string(credentialsId: rocketchat_hook, variable: 'HOOK_URL')]) {
-                                             sh(
-                                                 """
-                                                 curl -H 'Content-Type: application/json' \
-                                                 -X POST '${HOOK_URL}' \
-                                                 -d '{\"username\": \"jenkins\", \"icon_url\": \"https://dev-sfo01.opentlc.com/static/81c91982/images/headshot.png\", \"text\": \"@here :rage: ${env.JOB_NAME} (${env.BUILD_NUMBER}) failed retiring ${guid}.\"}'\
-                                                 """.trim()
-                                             )
-                                         }
-                                     }
-                                 }
-                             }
-
-		    }
+                    echo "GUID is '${guid}'"
                 }
             }
         }
-
         /* Skip this step because sometimes the completed email arrives
          before the 'has started' email
         stage('Wait for first email') {
@@ -213,7 +135,7 @@ pipeline {
                     --filter 'has started'"""
             }
         }
-        // This line was the closing for Skip this step line
+        */
 
         stage('Wait for last email and parse OpenShift location') {
             environment {
@@ -283,8 +205,8 @@ pipeline {
                 admin_credentials = credentials("${opentlc_admin_creds}")
                 DEBUG = 'true'
             }
-            // This step uses the delete_svc_guid.sh script to retire
-            // the service from CloudForms
+            /* This step uses the delete_svc_guid.sh script to retire
+             the service from CloudForms */
             steps {
                 git 'https://github.com/fridim/cloudforms-oob'
 
@@ -326,13 +248,13 @@ pipeline {
                         --filter 'has been deleted'"""
                 }
             }
-        } */
+        }
     }
-/*
+
     post {
         failure {
             git 'https://github.com/fridim/cloudforms-oob'
-            // retire in case of failure //
+            /* retire in case of failure */
             withCredentials(
                 [
                     usernameColonPassword(credentialsId: opentlc_creds, variable: 'credentials'),
@@ -346,7 +268,7 @@ pipeline {
                 """
             }
 
-            // Print ansible logs //
+            /* Print ansible logs */
 //            withCredentials([
 //                string(credentialsId: ssh_admin_host, variable: 'ssh_admin'),
 //                sshUserPrivateKey(
@@ -411,5 +333,5 @@ pipeline {
                 )
             }
         }
-  }*/
+    }
 }
