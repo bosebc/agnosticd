@@ -116,18 +116,47 @@ pipeline {
 
                       echo "GUID is '${guid}'"
                              //Sub Stage
-                             stage('Wait for first email') {
+                             //stage('Wait for first email') {
+                             //    environment {
+                             //        credentials=credentials("${imap_creds}")
+                             //    }
+                             //    steps {
+                             //        sh """./tests/jenkins/downstream/poll_email.py \
+                             //            --server '${imap_server}' \
+                             //            --guid ${guid} \
+                             //            --timeout 20 \
+                             //            --filter 'has started'"""
+                             //    }
+                             //}
+
+                             stage('Wait for last email and parse OpenShift location') {
                                  environment {
                                      credentials=credentials("${imap_creds}")
                                  }
                                  steps {
-                                     sh """./tests/jenkins/downstream/poll_email.py \
-                                         --server '${imap_server}' \
-                                         --guid ${guid} \
-                                         --timeout 20 \
-                                         --filter 'has started'"""
+                                     git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
+                                         branch: 'development'
+          
+                                     script {
+                                         email = sh(
+                                             returnStdout: true,
+                                             script: """
+                                               ./tests/jenkins/downstream/poll_email.py \
+                                               --server '${imap_server}' \
+                                               --guid ${guid} \
+                                               --timeout 30 \
+                                               --filter 'has completed'
+                                             """
+                                         ).trim()
+          
+          
+                                         def m = email =~ /To get started, please login with your OPENTLC credentials to: ([^ ]+) in your web browser/
+                                         openshift_location = m[0][1]
+                                     }
                                  }
                              }
+
+
 
 		    }
                 }
