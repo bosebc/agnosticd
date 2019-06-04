@@ -22,8 +22,8 @@ def guid=''
 def openshift_location = ''
 
 //CloudForm Items
-//def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
-def item = ['Dev - DM7 QLB Demo']
+def item = ['Dev - DM7 QLB Demo', 'DEV - FSI CC Dispute Demo']
+//def item = ['Dev - DM7 QLB Demo']
 
 // Catalog items
 def choices = [
