@@ -23,18 +23,12 @@ def openshift_location = ''
 
 // Catalog items
 def choices = [
-    'Middleware Solutions Demos / DM7 QLB Demo',
-    'DevOps Shared Cluster Testing / Testing - Shared DM7 QLB Demo',
     'DevOps Shared Cluster Development / Dev - DM7 QLB Demo',
 ].join("\n")
 
 def ocprelease_choice = [
     '3.11.43',
     '3.11.16',
-    '3.10.34',
-    '3.10.14',
-    '3.9.41',
-    '3.9.40',
 ].join("\n")
 
 def region_choice = [
