@@ -100,9 +100,9 @@ pipeline {
                             'runtime=8',
                             'nodes=2',
                             'users=2',
-                            'city=jenkinsccicd',
-                            'salesforce=test',
-                            'notes=devops_automation_jenkins',
+                            //'city=jenkinsccicd',
+                            //'salesforce=test',
+                            //'notes=devops_automation_jenkins',
                         ].join(',').trim()
                         echo "'${catalog}' '${item}'"
                         guid = sh(
@@ -110,7 +110,8 @@ pipeline {
                             script: """
                               ./opentlc/order_svc_guid.sh \
                               -c '${catalog}' \
-                              -i '${item}' \
+                              //-i '${item}' \
+                              -i '${x}' \
                               -G '${cf_group}' \
                               -d '${cfparams}' \
                             """
