@@ -77,6 +77,7 @@ pipeline {
 
     stages {
         stage('Run All') {
+            stages {
                         script {
                             for (x in item) {
                                 stage('order from CF') {
@@ -308,6 +309,8 @@ pipeline {
                             }
 
                         }
+            }
         }
     }
 }
+
