@@ -77,10 +77,6 @@ pipeline {
 
     stages {
         stage('Run All') {
-            parallel {
-                stage('Running All Stages') {
-                    steps {
-                        echo "Running All Steps"
                         script {
                             for (x in item) {
                                 stage('order from CF') {
@@ -312,10 +308,6 @@ pipeline {
                             }
 
                         }
-                    }
-                }
-            }
         }
     }
 }
-
