@@ -1,5 +1,3 @@
-import java.awt.SystemColor
-
 // -------------- Configuration --------------
 // CloudForms
 def opentlc_creds = 'b93d2da4-c2b7-45b5-bf3b-ee2c08c6368e'
@@ -77,7 +75,8 @@ pipeline {
 
     stages {
         stage('Run All') {
-            stages {
+            steps {
+                echo "Running All Stages"
                         script {
                             for (x in item) {
                                 stage('order from CF') {
