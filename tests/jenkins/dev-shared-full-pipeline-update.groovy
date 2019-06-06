@@ -1,3 +1,5 @@
+import java.awt.SystemColor
+
 // -------------- Configuration --------------
 // CloudForms
 def opentlc_creds = 'b93d2da4-c2b7-45b5-bf3b-ee2c08c6368e'
@@ -75,242 +77,245 @@ pipeline {
 
     stages {
         stage('Run All') {
-            stage ('Running All Stages') {
-                steps {
-                    echo "Running All Steps"
-                    script {
-                        for (x in item) {
-                            stage('order from CF') {
-                                environment {
-                                    uri = "${cf_uri}"
-                                    credentials = credentials("${opentlc_creds}")
-                                    DEBUG = 'true'
-                                }
-                                steps {
-                                    git url: 'https://github.com/fridim/cloudforms-oob'
+            parallel {
+                stage('Running All Stages') {
+                    steps {
+                        echo "Running All Steps"
+                        script {
+                            for (x in item) {
+                                stage('order from CF') {
+                                    environment {
+                                        uri = "${cf_uri}"
+                                        credentials = credentials("${opentlc_creds}")
+                                        DEBUG = 'true'
+                                    }
+                                    steps {
+                                        git url: 'https://github.com/fridim/cloudforms-oob'
 
-                                    script {
-                                        def catalog = params.catalog_item.split(' / ')[0].trim()
-                                        def ocprelease = params.ocprelease.trim()
-                                        def region = params.region.trim()
-                                        def cfparams = [
-                                                'check=t',
-                                                'quotacheck=t',
-                                                "ocprelease=${ocprelease}",
-                                                "region=${region}",
-                                                'expiration=7',
-                                                'runtime=8',
-                                                'nodes=2',
-                                                'users=2',
-                                        ].join(',').trim()
-                                        echo "'${catalog}' '${item}'"
-                                        guid = sh(
-                                                returnStdout: true,
-                                                script: """
-                                      ./opentlc/order_svc_guid.sh \
-                                      -c '${catalog}' \
-                                      -i '${x}' \
-                                      -G '${cf_group}' \
-                                      -d '${cfparams}' \
-                                    """
-                                        ).trim()
+                                        script {
+                                            def catalog = params.catalog_item.split(' / ')[0].trim()
+                                            def ocprelease = params.ocprelease.trim()
+                                            def region = params.region.trim()
+                                            def cfparams = [
+                                                    'check=t',
+                                                    'quotacheck=t',
+                                                    "ocprelease=${ocprelease}",
+                                                    "region=${region}",
+                                                    'expiration=7',
+                                                    'runtime=8',
+                                                    'nodes=2',
+                                                    'users=2',
+                                            ].join(',').trim()
+                                            echo "'${catalog}' '${item}'"
+                                            guid = sh(
+                                                    returnStdout: true,
+                                                    script: """
+                                          ./opentlc/order_svc_guid.sh \
+                                          -c '${catalog}' \
+                                          -i '${x}' \
+                                          -G '${cf_group}' \
+                                          -d '${cfparams}' \
+                                        """
+                                            ).trim()
 
-                                        echo "GUID is '${guid}'"
+                                            echo "GUID is '${guid}'"
+                                        }
                                     }
                                 }
-                            }
-                            stage('Wait for last email and parse OpenShift location') {
-                                environment {
-                                    credentials = credentials("${imap_creds}")
-                                }
-                                steps {
-                                    git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
-                                            branch: 'development'
+                                stage('Wait for last email and parse OpenShift location') {
+                                    environment {
+                                        credentials = credentials("${imap_creds}")
+                                    }
+                                    steps {
+                                        git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
+                                                branch: 'development'
 
-                                    script {
-                                        email = sh(
-                                                returnStdout: true,
-                                                script: """
-                                                    ./tests/jenkins/downstream/poll_email.py \
-                                                    --server '${imap_server}' \
-                                                    --guid ${guid} \
-                                                    --timeout 30 \
-                                                    --filter 'has completed'
-                                                    """
-                                        ).trim()
+                                        script {
+                                            email = sh(
+                                                    returnStdout: true,
+                                                    script: """
+                                                        ./tests/jenkins/downstream/poll_email.py \
+                                                        --server '${imap_server}' \
+                                                        --guid ${guid} \
+                                                        --timeout 30 \
+                                                        --filter 'has completed'
+                                                        """
+                                            ).trim()
 
-                                        def m = email =~ /To get started, please login with your OPENTLC credentials to: ([^ ]+) in your web browser/
-                                        openshift_location = m[0][1]
+                                            def m = email =~ /To get started, please login with your OPENTLC credentials to: ([^ ]+) in your web browser/
+                                            openshift_location = m[0][1]
+                                        }
                                     }
                                 }
-                            }
-                            stage('Test OpenShift access') {
-                                environment {
-                                    credentials = credentials("${opentlc_creds}")
-                                }
-                                steps {
-                                    sh "./tests/jenkins/downstream/openshift_client.sh '${openshift_location}'"
-                                }
-                            }
-                            stage('Confirm before retiring') {
-                                when {
-                                    expression {
-                                        return params.confirm_before_delete
+                                stage('Test OpenShift access') {
+                                    environment {
+                                        credentials = credentials("${opentlc_creds}")
+                                    }
+                                    steps {
+                                        sh "./tests/jenkins/downstream/openshift_client.sh '${openshift_location}'"
                                     }
                                 }
-                                steps {
-                                    input "Continue ?"
+                                stage('Confirm before retiring') {
+                                    when {
+                                        expression {
+                                            return params.confirm_before_delete
+                                        }
+                                    }
+                                    steps {
+                                        input "Continue ?"
+                                    }
                                 }
-                            }
-                            stage('Retire service from CF') {
-                                environment {
-                                    uri = "${cf_uri}"
-                                    credentials = credentials("${opentlc_creds}")
-                                    admin_credentials = credentials("${opentlc_admin_creds}")
-                                    DEBUG = 'true'
-                                }
-                                /* This step uses the delete_svc_guid.sh script to retire
-                                     the service from CloudForms */
-                                steps {
-                                    git 'https://github.com/fridim/cloudforms-oob'
+                                stage('Retire service from CF') {
+                                    environment {
+                                        uri = "${cf_uri}"
+                                        credentials = credentials("${opentlc_creds}")
+                                        admin_credentials = credentials("${opentlc_admin_creds}")
+                                        DEBUG = 'true'
+                                    }
+                                    /* This step uses the delete_svc_guid.sh script to retire
+                                         the service from CloudForms */
+                                    steps {
+                                        git 'https://github.com/fridim/cloudforms-oob'
 
-                                    sh "./opentlc/delete_svc_guid.sh '${guid}'"
+                                        sh "./opentlc/delete_svc_guid.sh '${guid}'"
+                                    }
+                                    post {
+                                        failure {
+                                            withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
+                                                mail(
+                                                        subject: "${env.JOB_NAME} (${env.BUILD_NUMBER}) failed retiring for GUID=${guid}",
+                                                        body: "It appears that ${env.BUILD_URL} is failing, somebody should do something about that.\nMake sure GUID ${guid} is destroyed.",
+                                                        to: "${notification_email}",
+                                                        replyTo: "${notification_email}",
+                                                        from: credentials.split(':')[0]
+                                                )
+                                            }
+                                            withCredentials([string(credentialsId: rocketchat_hook, variable: 'HOOK_URL')]) {
+                                                sh(
+                                                        """
+                                        curl -H 'Content-Type: application/json' \
+                                        -X POST '${HOOK_URL}' \
+                                        -d '{\"username\": \"jenkins\", \"icon_url\": \"https://dev-sfo01.opentlc.com/static/81c91982/images/headshot.png\", \"text\": \"@here :rage: ${
+                                                            env.JOB_NAME
+                                                        } (${env.BUILD_NUMBER}) failed retiring ${guid}.\"}'\
+                                        """.trim()
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
+                                stage('Wait for deletion email') {
+                                    steps {
+                                        git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
+                                                branch: 'development'
+
+                                        withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
+                                            sh """./tests/jenkins/downstream/poll_email.py \
+                                    --guid ${guid} \
+                                    --timeout 20 \
+                                    --server '${imap_server}' \
+                                    --filter 'has been deleted'"""
+                                        }
+                                    }
+                                }
+                                //Post Script
                                 post {
                                     failure {
+                                        git 'https://github.com/fridim/cloudforms-oob'
+                                        /* retire in case of failure */
+                                        withCredentials(
+                                                [
+                                                        usernameColonPassword(credentialsId: opentlc_creds, variable: 'credentials'),
+                                                        usernameColonPassword(credentialsId: opentlc_admin_creds, variable: 'admin_credentials')
+                                                ]
+                                        ) {
+                                            sh """
+                        export uri="${cf_uri}"
+                        export DEBUG=true
+                        ./opentlc/delete_svc_guid.sh '${guid}'
+                        """
+                                        }
+
+                                        /* Print ansible logs */
+                                        //            withCredentials([
+                                        //                string(credentialsId: ssh_admin_host, variable: 'ssh_admin'),
+                                        //                sshUserPrivateKey(
+                                        //                    credentialsId: ssh_creds,
+                                        //                    keyFileVariable: 'ssh_key',
+                                        //                    usernameVariable: 'ssh_username')
+                                        //            ]) {
+                                        //                sh("""
+                                        //                    ssh -o StrictHostKeyChecking=no -i ${ssh_key} ${ssh_admin} \
+                                        //                    "find deployer_logs -name '*${guid}*log' | xargs cat"
+                                        //                """.trim()
+                                        //                )
+                                        //            }
+
                                         withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
                                             mail(
-                                                    subject: "${env.JOB_NAME} (${env.BUILD_NUMBER}) failed retiring for GUID=${guid}",
-                                                    body: "It appears that ${env.BUILD_URL} is failing, somebody should do something about that.\nMake sure GUID ${guid} is destroyed.",
+                                                    subject: "${env.JOB_NAME} (${env.BUILD_NUMBER}) failed GUID=${guid}",
+                                                    body: "It appears that ${env.BUILD_URL} is failing, somebody should do something about that.",
                                                     to: "${notification_email}",
                                                     replyTo: "${notification_email}",
                                                     from: credentials.split(':')[0]
                                             )
                                         }
+
+                                        withCredentials([
+                                                string(credentialsId: ssh_admin_host, variable: 'ssh_admin'),
+                                                sshUserPrivateKey(
+                                                        credentialsId: ssh_creds,
+                                                        keyFileVariable: 'ssh_key',
+                                                        usernameVariable: 'ssh_username')
+                                        ]) {
+                                            script {
+                                                // Be careful with commands executed on admin host, make sure it's 'read-only' commands
+                                                def retstring = sh("""
+                                                        ssh -o StrictHostKeyChecking=no -i ${ssh_key} ${ssh_admin} \
+                                                        "find deployer_logs -name '*${guid}*log' | xargs -n1 grep OKTODELETE"
+                                                        exit 0
+                                                        """.trim()
+                                                )
+                                                assert retstring.contains("OKTODELETE")
+                                            }
+                                        }
+
                                         withCredentials([string(credentialsId: rocketchat_hook, variable: 'HOOK_URL')]) {
                                             sh(
                                                     """
-                                    curl -H 'Content-Type: application/json' \
-                                    -X POST '${HOOK_URL}' \
-                                    -d '{\"username\": \"jenkins\", \"icon_url\": \"https://dev-sfo01.opentlc.com/static/81c91982/images/headshot.png\", \"text\": \"@here :rage: ${
+                                                    curl -H 'Content-Type: application/json' \
+                                                    -X POST '${HOOK_URL}' \
+                                                    -d '{\"username\": \"jenkins\", \"icon_url\": \"https://dev-sfo01.opentlc.com/static/81c91982/images/headshot.png\", \"text\": \"@here :rage: ${
                                                         env.JOB_NAME
-                                                    } (${env.BUILD_NUMBER}) failed retiring ${guid}.\"}'\
-                                    """.trim()
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            stage('Wait for deletion email') {
-                                steps {
-                                    git url: 'https://github.com/sborenst/ansible_agnostic_deployer',
-                                            branch: 'development'
-
-                                    withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
-                                        sh """./tests/jenkins/downstream/poll_email.py \
-                                --guid ${guid} \
-                                --timeout 20 \
-                                --server '${imap_server}' \
-                                --filter 'has been deleted'"""
-                                    }
-                                }
-                            }
-                            //Post Script
-                            post {
-                                failure {
-                                    git 'https://github.com/fridim/cloudforms-oob'
-                                    /* retire in case of failure */
-                                    withCredentials(
-                                            [
-                                                    usernameColonPassword(credentialsId: opentlc_creds, variable: 'credentials'),
-                                                    usernameColonPassword(credentialsId: opentlc_admin_creds, variable: 'admin_credentials')
-                                            ]
-                                    ) {
-                                        sh """
-                    export uri="${cf_uri}"
-                    export DEBUG=true
-                    ./opentlc/delete_svc_guid.sh '${guid}'
-                    """
-                                    }
-
-                                    /* Print ansible logs */
-                                    //            withCredentials([
-                                    //                string(credentialsId: ssh_admin_host, variable: 'ssh_admin'),
-                                    //                sshUserPrivateKey(
-                                    //                    credentialsId: ssh_creds,
-                                    //                    keyFileVariable: 'ssh_key',
-                                    //                    usernameVariable: 'ssh_username')
-                                    //            ]) {
-                                    //                sh("""
-                                    //                    ssh -o StrictHostKeyChecking=no -i ${ssh_key} ${ssh_admin} \
-                                    //                    "find deployer_logs -name '*${guid}*log' | xargs cat"
-                                    //                """.trim()
-                                    //                )
-                                    //            }
-
-                                    withCredentials([usernameColonPassword(credentialsId: imap_creds, variable: 'credentials')]) {
-                                        mail(
-                                                subject: "${env.JOB_NAME} (${env.BUILD_NUMBER}) failed GUID=${guid}",
-                                                body: "It appears that ${env.BUILD_URL} is failing, somebody should do something about that.",
-                                                to: "${notification_email}",
-                                                replyTo: "${notification_email}",
-                                                from: credentials.split(':')[0]
-                                        )
-                                    }
-
-                                    withCredentials([
-                                            string(credentialsId: ssh_admin_host, variable: 'ssh_admin'),
-                                            sshUserPrivateKey(
-                                                    credentialsId: ssh_creds,
-                                                    keyFileVariable: 'ssh_key',
-                                                    usernameVariable: 'ssh_username')
-                                    ]) {
-                                        script {
-                                            // Be careful with commands executed on admin host, make sure it's 'read-only' commands
-                                            def retstring = sh("""
-                                                    ssh -o StrictHostKeyChecking=no -i ${ssh_key} ${ssh_admin} \
-                                                    "find deployer_logs -name '*${guid}*log' | xargs -n1 grep OKTODELETE"
-                                                    exit 0
+                                                    } (${env.BUILD_NUMBER}) failed GUID=${guid}. It appears that ${
+                                                        env.BUILD_URL
+                                                    }/console is failing, somebody should do something about that.\"}'\
                                                     """.trim()
                                             )
-                                            assert retstring.contains("OKTODELETE")
                                         }
                                     }
+                                    fixed {
+                                        withCredentials([string(credentialsId: rocketchat_hook, variable: 'HOOK_URL')]) {
+                                            sh(
+                                                    """
+                                                    curl -H 'Content-Type: application/json' \
+                                                    -X POST '${HOOK_URL}' \
+                                                    -d '{\"username\": \"jenkins\", \"icon_url\": \"https://dev-sfo01.opentlc.com/static/81c91982/images/headshot.png\", \"text\": \"@here :smile: ${
+                                                        env.JOB_NAME
+                                                    } is now FIXED, see ${env.BUILD_URL}/console\"}'\
+                                                    """.trim()
+                                            )
+                                        }
+                                    }
+                                }
 
-                                    withCredentials([string(credentialsId: rocketchat_hook, variable: 'HOOK_URL')]) {
-                                        sh(
-                                                """
-                                                curl -H 'Content-Type: application/json' \
-                                                -X POST '${HOOK_URL}' \
-                                                -d '{\"username\": \"jenkins\", \"icon_url\": \"https://dev-sfo01.opentlc.com/static/81c91982/images/headshot.png\", \"text\": \"@here :rage: ${
-                                                    env.JOB_NAME
-                                                } (${env.BUILD_NUMBER}) failed GUID=${guid}. It appears that ${
-                                                    env.BUILD_URL
-                                                }/console is failing, somebody should do something about that.\"}'\
-                                                """.trim()
-                                        )
-                                    }
-                                }
-                                fixed {
-                                    withCredentials([string(credentialsId: rocketchat_hook, variable: 'HOOK_URL')]) {
-                                        sh(
-                                                """
-                                                curl -H 'Content-Type: application/json' \
-                                                -X POST '${HOOK_URL}' \
-                                                -d '{\"username\": \"jenkins\", \"icon_url\": \"https://dev-sfo01.opentlc.com/static/81c91982/images/headshot.png\", \"text\": \"@here :smile: ${
-                                                    env.JOB_NAME
-                                                } is now FIXED, see ${env.BUILD_URL}/console\"}'\
-                                                """.trim()
-                                        )
-                                    }
-                                }
                             }
 
                         }
-
                     }
                 }
-            }    
+            }
         }
     }
 }
+
