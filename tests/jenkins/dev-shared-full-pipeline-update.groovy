@@ -76,7 +76,7 @@ pipeline {
     stages {
         stage('Run All') {
             steps {
-                git url: 'https://github.com/fridim/cloudforms-oob'
+                echo "Running All Steps"
                 script {
                     for (x in item) {
                         stage('order from CF') {
