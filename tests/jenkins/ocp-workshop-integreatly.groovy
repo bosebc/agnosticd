@@ -31,6 +31,7 @@ def choices = [
 ].join("\n")
 
 def ocprelease_choice = [
+    '3.11.104',
     '3.11.16',
     '3.10.14',
 ].join("\n")
