@@ -99,6 +99,7 @@ pipeline {
                         'users=2',
                         'city=rhpds',
                         'salesforce=test',
+                        'check2=t',
                         'notes=devops_automation_jenkins',
                     ].join(',').trim()
 
