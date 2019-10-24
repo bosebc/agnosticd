@@ -97,7 +97,7 @@ pipeline {
                         'expiration=7',
                         'runtime=8',
                         'users=2',
-                        'city=jenkinsccicd',
+                        'city=rhpds',
                         'salesforce=test',
                         'notes=devops_automation_jenkins',
                     ].join(',').trim()
