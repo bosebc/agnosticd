@@ -24,6 +24,8 @@ def openshift_location = ''
 // Catalog items
 def choices = [
     'DevOps Team Development Catalog / DEV - Security with OCP for DevSecOps',
+    'DevOps Team Testing Catalog / TEST - Security with OCP for DevSecOps',
+    'Workshops / Security with OCP for DevSecOps',
 ].join("\n")
 
 def region_choice = [
