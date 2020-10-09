@@ -30,6 +30,10 @@ def choices = [
 
 def region_choice = [
     'dev_gpte_no_repos',
+    'apac_gpte',
+    'emea_gpte',
+    'na_gpte',
+    'na2_gpte',
 ].join("\n")
 
 pipeline {
